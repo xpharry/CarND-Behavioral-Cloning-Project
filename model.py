@@ -1,4 +1,5 @@
 # general
+from __future__ import absolute_import
 import os
 import sys
 import argparse
@@ -9,8 +10,8 @@ import tensorflow as tf
 import sklearn
 from sklearn.model_selection import train_test_split
 from keras.models import Sequential
-from keras.layers import Flatten, Dense, Conv2D, MaxPool2D, Dropout, Lambda, Cropping2D
-from .utils import preprocess_image, augment_data, display_results
+from keras.layers import Flatten, Dense, Conv2D, MaxPooling2D, Dropout, Lambda, Cropping2D
+from utils import preprocess_image, augment_data, display_results
 
 FLAGS = None
 data_dir = './data'
@@ -43,8 +44,10 @@ def generator(samples, batch_size=32):
                 center_image = preprocess_image(center_image)
                 images.append(center_image)
                 angles.append(center_angle)
-            # data augmentation
-            images, angles = augment_data(images, angles)
+                # data augmentation
+                augmented_image, augmented_angle = augment_data(center_image, center_angle)
+                images.append(augmented_image)
+                angles.append(augmented_angle)
 
             # trim image to only see section with road
             X_train = np.array(images)
@@ -59,9 +62,9 @@ def create_model():
     model.add(Lambda(lambda x: x/127.5 - 1., input_shape=input_shape))
     model.add(Cropping2D(cropping=((50, 20), (0, 0))))
     model.add(Conv2D(6, (5, 5), strides=(2, 2), activation='relu'))
-    model.add(MaxPool2D(strides=(2, 2)))
+    model.add(MaxPooling2D(strides=(2, 2)))
     model.add(Conv2D(16, (5, 5), activation='relu'))
-    model.add(MaxPool2D(strides=(2, 2)))
+    model.add(MaxPooling2D(strides=(2, 2)))
     model.add(Flatten())
     model.add(Dense(120, activation='relu'))
     model.add(Dropout(0.5))
@@ -72,7 +75,7 @@ def create_model():
 
 
 def train(model, train_samples, validation_samples):
-    model.summary()
+    # model.summary()
     model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
     # model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=5, verbose=1)
 
@@ -109,7 +112,7 @@ def main(_):
     history_object = train(model, train_samples, validation_samples)
 
     # display
-    display_results(history_object)
+    # display_results(history_object)
 
 
 if __name__ == '__main__':

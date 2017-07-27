@@ -7,24 +7,21 @@ def preprocess_image(image):
     '''
     Method for preprocessing images
     '''
+    # print("preprocessing image ...")
     # original shape: 160x320x3
     # apply subtle blur
-    image = cv2.GaussianBlur(image, (3,3), 0)
+    image = cv2.GaussianBlur(image, (3, 3), 0)
     # convert to YUV color space (as nVidia paper suggests)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
     return image
 
 
-def augment_data(images, angles):
+def augment_data(image, angle):
     # data augmentation by flipping
-    augmented_images = images
-    augmented_angles = angles
-    for image, angle in zip(images, angles):
-        image_flipped = np.fliplr(image)
-        angle_flipped = -angle
-        augmented_images.append(image_flipped)
-        augmented_angles.append(angle_flipped)
-    return augmented_images, augmented_angles
+    # print("augmenting data ...")
+    image_flipped = np.fliplr(image)
+    angle_flipped = -angle
+    return image_flipped, angle_flipped
 
 
 # visualization
