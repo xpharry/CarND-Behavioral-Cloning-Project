@@ -59,13 +59,13 @@ def create_model():
 
 
 def train(model, X_train, y_train):
-    # model.summary()
+    model.summary()
     model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
     history_object = model.fit(X_train, y_train, validation_split=0.2, shuffle=True, epochs=5, verbose=1)
     model.save('model.h5')
 
     # print the keys contained in the history object
-    # print(history_object.history.keys())
+    print(history_object.history.keys())
 
     return history_object
 
@@ -83,7 +83,7 @@ def main(_):
     history_object = train(model, X_train, y_train)
 
     # display
-    display_results(history_object)
+    # display_results(history_object)
 
 
 if __name__ == '__main__':
