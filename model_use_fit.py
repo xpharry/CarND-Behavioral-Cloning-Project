@@ -4,10 +4,11 @@ import sys
 import argparse
 import csv
 import cv2
+import numpy as np
 import tensorflow as tf
 from keras.models import Sequential
 from keras.layers import Flatten, Dense, Conv2D, MaxPool2D, Dropout, Lambda, Cropping2D
-from .utils import preprocess_image, augment_data, display_results
+from utils import preprocess_image, augment_data, display_results
 
 FLAGS = None
 data_dir = './data'
@@ -31,10 +32,11 @@ def read_data(data_path):
         image = preprocess_image(image)
         images.append(image)
         angles.append(angle)
-
-    # data augmentation
-    images, angles = augment_data(images, angles)
-    return images, angles
+        # data augmentation
+        augmented_image, augmented_angle = augment_data(image, angle)
+        images.append(augmented_image)
+        angles.append(augmented_angle)
+    return np.array(images), np.array(angles)
 
 
 # create model
@@ -57,13 +59,13 @@ def create_model():
 
 
 def train(model, X_train, y_train):
-    model.summary()
+    # model.summary()
     model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
-    history_object = model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=5, verbose=1)
+    history_object = model.fit(X_train, y_train, validation_split=0.2, shuffle=True, epochs=5, verbose=1)
     model.save('model.h5')
 
     # print the keys contained in the history object
-    print(history_object.history.keys())
+    # print(history_object.history.keys())
 
     return history_object
 
@@ -71,6 +73,8 @@ def train(model, X_train, y_train):
 def main(_):
     # read data
     X_train, y_train = read_data(FLAGS.data_dir)
+
+    print(X_train.shape, y_train.shape)
 
     # create model
     model = create_model()
