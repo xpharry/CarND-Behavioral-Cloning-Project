@@ -38,16 +38,30 @@ def generator(samples, batch_size=32):
             images = []
             angles = []
             for batch_sample in batch_samples:
-                name = FLAGS.data_dir + '/IMG/' + batch_sample[0].split('/')[-1]
-                center_image = cv2.imread(name)
+                center_name = FLAGS.data_dir + '/IMG/' + batch_sample[0].split('/')[-1]
+                center_image = preprocess_image(cv2.imread(center_name))
                 center_angle = float(batch_sample[3])
-                center_image = preprocess_image(center_image)
-                images.append(center_image)
-                angles.append(center_angle)
+
+                # add in left and right cameras' info
+                left_name = FLAGS.data_dir + '/IMG/' + batch_sample[1].split('/')[-1]
+                left_image = preprocess_image(cv2.imread(left_name))
+                right_name = FLAGS.data_dir + '/IMG/' + batch_sample[2].split('/')[-1]
+                right_image = preprocess_image(cv2.imread(right_name))
+                # create adjusted steering measurements for the side camera images
+                correction = 0.3  # this is a parameter to tune
+                left_angle = center_angle + correction
+                right_angle = center_angle - correction
+
+                # add images and angles to data set
+                images.extend([center_image, left_image, right_image])
+                angles.extend([center_angle, left_angle, right_angle])
+
                 # data augmentation
-                augmented_image, augmented_angle = augment_data(center_image, center_angle)
-                images.append(augmented_image)
-                angles.append(augmented_angle)
+                augmented_c_image, augmented_c_angle = augment_data(center_image, center_angle)
+                augmented_l_image, augmented_l_angle = augment_data(left_image, left_angle)
+                augmented_r_image, augmented_r_angle = augment_data(right_image, right_angle)
+                images.extend([augmented_c_image, augmented_l_image, augmented_r_image])
+                angles.extend([augmented_c_angle, augmented_l_angle, augmented_r_angle])
 
             # trim image to only see section with road
             X_train = np.array(images)
@@ -76,7 +90,7 @@ def create_model():
 
 def train(model, train_samples, validation_samples):
     # model.summary()
-    model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
+    model.compile(loss='mse', optimizer='adam')
     # model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=5, verbose=1)
 
     # compile and train the model using the generator function
@@ -88,7 +102,7 @@ def train(model, train_samples, validation_samples):
                                          steps_per_epoch=len(train_samples) // FLAGS.batch_size,
                                          validation_data=validation_generator,
                                          validation_steps=len(validation_samples) // FLAGS.batch_size,
-                                         epochs=FLAGS.nb_epochs,
+                                         epochs=FLAGS.epochs,
                                          verbose=1)
     model.save('model.h5')
 
@@ -120,7 +134,7 @@ if __name__ == '__main__':
     # Directory Parameters:
     parser.add_argument('--data_dir', type=str, default=data_dir,
                         help='Input Data Directory')
-    parser.add_argument('--nb_epochs', type=int, default=5,
+    parser.add_argument('--epochs', type=int, default=5,
                         help='The number of epochs')
     parser.add_argument('--batch_size', type=int, default=32,
                         help='The batch size')
@@ -132,6 +146,6 @@ if __name__ == '__main__':
 Example:
 python model.py \
 --data_dir ./data/ \
---nb_epochs 5 \
+--epochs 5 \
 --batch_size 128
 """

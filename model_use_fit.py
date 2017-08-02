@@ -33,9 +33,9 @@ def read_data(data_path):
         images.append(image)
         angles.append(angle)
         # data augmentation
-        augmented_image, augmented_angle = augment_data(image, angle)
-        images.append(augmented_image)
-        angles.append(augmented_angle)
+        # augmented_image, augmented_angle = augment_data(image, angle)
+        # images.append(augmented_image)
+        # angles.append(augmented_angle)
     return np.array(images), np.array(angles)
 
 
@@ -60,8 +60,8 @@ def create_model():
 
 def train(model, X_train, y_train):
     model.summary()
-    model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
-    history_object = model.fit(X_train, y_train, validation_split=0.2, shuffle=True, epochs=5, verbose=1)
+    model.compile(loss='mse', optimizer='adam')
+    history_object = model.fit(X_train, y_train, validation_split=0.2, shuffle=True, epochs=FLAGS.epochs, verbose=1)
     model.save('model.h5')
 
     # print the keys contained in the history object
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     # Directory Parameters:
     parser.add_argument('--data_dir', type=str, default=data_dir,
                         help='Input Data Directory')
-    parser.add_argument('--nb_epochs', type=int, default=5,
+    parser.add_argument('--epochs', type=int, default=5,
                         help='The number of epochs')
 
     FLAGS, unparsed = parser.parse_known_args()
@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
 """
 Example:
-python model.py \
+python model_use_fit.py \
 --data_dir ./data/ \
---nb_epochs 5
+--epochs 5
 """
