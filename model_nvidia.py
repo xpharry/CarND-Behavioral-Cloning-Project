@@ -41,12 +41,6 @@ def generator(samples, batch_size=32):
                 center_name = FLAGS.data_dir + '/IMG/' + batch_sample[0].split('/')[-1]
                 center_image = preprocess_image(cv2.imread(center_name))
                 center_angle = float(batch_sample[3])
-                images.append(center_image)
-                angles.append(center_angle)
-                # data augmentation
-                augmented_c_image, augmented_c_angle = augment_data(center_image, center_angle)
-                images.append(augmented_c_image)
-                angles.append(augmented_c_angle)
 
                 # add in left and right cameras' info
                 left_name = FLAGS.data_dir + '/IMG/' + batch_sample[1].split('/')[-1]
@@ -57,15 +51,17 @@ def generator(samples, batch_size=32):
                 correction = 0.3  # this is a parameter to tune
                 left_angle = center_angle + correction
                 right_angle = center_angle - correction
+
                 # add images and angles to data set
-                images.extend([left_image, right_image])
-                angles.extend([left_angle, right_angle])
+                images.extend([center_image, left_image, right_image])
+                angles.extend([center_angle, left_angle, right_angle])
 
                 # data augmentation
+                augmented_c_image, augmented_c_angle = augment_data(center_image, center_angle)
                 augmented_l_image, augmented_l_angle = augment_data(left_image, left_angle)
                 augmented_r_image, augmented_r_angle = augment_data(right_image, right_angle)
-                images.extend([augmented_l_image, augmented_r_image])
-                angles.extend([augmented_l_angle, augmented_r_angle])
+                images.extend([augmented_c_image, augmented_l_image, augmented_r_image])
+                angles.extend([augmented_c_angle, augmented_l_angle, augmented_r_angle])
 
             # trim image to only see section with road
             X_train = np.array(images)
@@ -73,11 +69,10 @@ def generator(samples, batch_size=32):
             yield sklearn.utils.shuffle(X_train, y_train)
 
 
-# create model
-def create_model():
+def LeNet_model():
     input_shape = (160, 320, 3)
     model = Sequential()
-    model.add(Lambda(lambda x: x/127.5 - 1., input_shape=input_shape))
+    model.add(Lambda(lambda x: x / 127.5 - 1., input_shape=input_shape))
     model.add(Cropping2D(cropping=((50, 20), (0, 0))))
     model.add(Conv2D(6, (5, 5), strides=(2, 2), activation='relu'))
     model.add(MaxPooling2D(strides=(2, 2)))
@@ -90,6 +85,38 @@ def create_model():
     model.add(Dropout(0.5))
     model.add(Dense(1))
     return model
+
+
+def Nvidia_model():
+    input_shape = (160, 320, 3)
+    model = Sequential()
+    model.add(Lambda(lambda x: x/127.5 - 1., input_shape=input_shape))
+    model.add(Cropping2D(cropping=((50, 20), (0, 0))))
+    model.add(Conv2D(24, (5, 5), strides=(2, 2), activation='elu'))
+    model.add(Dropout(0.5))
+    model.add(Conv2D(36, (5, 5), strides=(2, 2), activation='elu'))
+    model.add(Dropout(0.5))
+    model.add(Conv2D(48, (3, 3), strides=(1, 1), activation='elu'))
+    model.add(Dropout(0.5))
+    model.add(Conv2D(64, (3, 3), strides=(1, 1), activation='elu'))
+    model.add(Dropout(0.5))
+    model.add(Conv2D(64, (3, 3), strides=(1, 1), activation='elu'))
+    model.add(Dropout(0.5))
+    model.add(Flatten())
+    model.add(Dense(100, activation='elu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(50, activation='elu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(10, activation='elu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(1))
+    return model
+
+
+def create_model():
+    if FLAGS.model_type == 'nvidia':
+        return Nvidia_model()
+    return LeNet_model()
 
 
 def train(model, train_samples, validation_samples):
@@ -135,6 +162,9 @@ def main(_):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+
+    parser.add_argument('--model_type', type=str, default='lenet',
+                        help='Models: lenet, nvidia')
     # Directory Parameters:
     parser.add_argument('--data_dir', type=str, default=data_dir,
                         help='Input Data Directory')

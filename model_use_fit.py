@@ -33,9 +33,9 @@ def read_data(data_path):
         images.append(image)
         angles.append(angle)
         # data augmentation
-        # augmented_image, augmented_angle = augment_data(image, angle)
-        # images.append(augmented_image)
-        # angles.append(augmented_angle)
+        augmented_image, augmented_angle = augment_data(image, angle)
+        images.append(augmented_image)
+        angles.append(augmented_angle)
     return np.array(images), np.array(angles)
 
 
