@@ -11,7 +11,6 @@ def preprocess_image(image):
     # original shape: 160x320x3
     # apply subtle blur
     image = cv2.GaussianBlur(image, (3, 3), 0)
-    # convert to YUV color space (as nVidia paper suggests)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     return image
 
