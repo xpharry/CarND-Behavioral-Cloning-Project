@@ -151,3 +151,5 @@ I used this training data for training the model. The validation set helped dete
 I got relative good performance with LeNet-5 and a few data and I believed it was close to success. But finally I had to spend one week for almost nothing. Because I made a mistake in preprocessing the images and also ran into a wrong direction when debugging.
 
 I happened to see someone mention BGR and RGB only when I noticed that I mistakenly converted the image color format from BGR to YUV. The Nvidia paper actually mentioned YUV format but it is not consistent with what was used in drive.py. That is why I got even worse performance with more data.
+
+It turned out the image needed to be converted to RGB format which followed a more stable and better driving performance.
